@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import logging
 import weakref
 
 from sentry_sdk.hub import Hub, _should_send_default_pii
@@ -179,8 +180,12 @@ def _capture_exception(sender, exception, **kwargs):
     if hub.get_integration(FlaskIntegration) is None:
         return
 
+    logging.info("[Flask] Hub.current: {}".format(hub))
+
     # If an integration is there, a client has to be there.
     client = hub.client  # type: Any
+
+    logging.info("[Flask] hub.client: {}".format(client))
 
     event, hint = event_from_exception(
         exception,

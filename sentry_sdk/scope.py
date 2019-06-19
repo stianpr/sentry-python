@@ -19,7 +19,6 @@ if MYPY:
 
     F = TypeVar("F", bound=Callable[..., Any])
 
-
 global_event_processors = []  # type: List[EventProcessor]
 
 
@@ -96,6 +95,7 @@ class Scope(object):
     def user(self, value):
         """When set a specific user is bound to the scope."""
         self._user = value
+        print("!!!!!!!!!!!!!!!!! - SETTING USER", self, value)
 
     def set_span_context(self, span_context):
         """Sets the span context."""
@@ -197,6 +197,8 @@ class Scope(object):
             event["level"] = self._level
 
         event.setdefault("breadcrumbs", []).extend(self._breadcrumbs)
+        print("!!!!!!!!!!!!!!!!! accessing user", self, event.get("user"),
+              self._user)
         if event.get("user") is None and self._user is not None:
             event["user"] = self._user
 
@@ -229,7 +231,8 @@ class Scope(object):
                     return _drop(event, error_processor, "error processor")
                 event = new_event
 
-        for event_processor in chain(global_event_processors, self._event_processors):
+        for event_processor in chain(global_event_processors,
+                                     self._event_processors):
             new_event = event
             with capture_internal_exceptions():
                 new_event = event_processor(event, hint)

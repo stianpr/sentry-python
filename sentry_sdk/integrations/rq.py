@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import logging
 import weakref
 
 from sentry_sdk.hub import Hub
@@ -35,16 +36,24 @@ class RqIntegration(Integration):
             hub = Hub.current
             integration = hub.get_integration(RqIntegration)
 
+            logging.info("[RQIntegration] Hub.current: {}".format(hub))
+
             if integration is None:
                 return old_perform_job(self, job, *args, **kwargs)
 
             client = hub.client
             assert client is not None
 
-            with hub.configure_scope() as scope:
+            logging.info("[RQIntegration] hub.client: {}".format(client))
+
+            with hub.push_scope() as scope:
+                scope._name = "rq"
                 scope.clear_breadcrumbs()
                 scope.add_event_processor(_make_event_processor(weakref.ref(job)))
+                scope.user = {'id': 'prestholdt'}
                 rv = old_perform_job(self, job, *args, **kwargs)
+
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! - inside patched job", scope)
 
             if self.is_horse:
                 # We're inside of a forked process and RQ is
@@ -59,6 +68,8 @@ class RqIntegration(Integration):
         old_handle_exception = Worker.handle_exception
 
         def sentry_patched_handle_exception(self, job, *exc_info, **kwargs):
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! - sentry_patched_handle_exception")
+
             _capture_exception(exc_info)  # type: ignore
             return old_handle_exception(self, job, *exc_info, **kwargs)
 
@@ -73,6 +84,8 @@ def _make_event_processor(weak_job):
         if job is not None:
             with capture_internal_exceptions():
                 event["transaction"] = job.func_name
+
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! - Add job stuff")
 
             with capture_internal_exceptions():
                 extra = event.setdefault("extra", {})
@@ -108,5 +121,7 @@ def _capture_exception(exc_info, **kwargs):
         client_options=client.options,
         mechanism={"type": "rq", "handled": False},
     )
+
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! - Capture exception")
 
     hub.capture_event(event, hint=hint)

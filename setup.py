@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 Sentry-Python - Sentry SDK for Python
 =====================================
@@ -12,7 +11,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sentry-sdk",
-    version="0.9.2",
+    version="0.9.2.4",
     author="Sentry Team and Contributors",
     author_email="hello@getsentry.com",
     url="https://github.com/getsentry/sentry-python",
