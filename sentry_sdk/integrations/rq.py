@@ -41,7 +41,7 @@ class RqIntegration(Integration):
             client = hub.client
             assert client is not None
 
-            with hub.push_scope() as scope:
+            with hub.configure_scope() as scope:
                 scope.clear_breadcrumbs()
                 scope.add_event_processor(_make_event_processor(weakref.ref(job)))
                 rv = old_perform_job(self, job, *args, **kwargs)
